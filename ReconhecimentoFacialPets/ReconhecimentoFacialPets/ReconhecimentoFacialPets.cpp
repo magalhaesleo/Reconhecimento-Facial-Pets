@@ -155,8 +155,8 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 			0 | CASCADE_SCALE_IMAGE, Size(30, 30));
 
 		//cv::Ptr<cv::face::StandardCollector> collector = face::StandardCollector::create();
-		Mat fcR = imread("D:\\Projetos\\Repositorios\\Reconhecimento-Facial-Pets\\images\\lil-1.jpg", IMREAD_GRAYSCALE);
-		//Mat fcR;
+		//Mat fcR = imread("D:\\Projetos\\Repositorios\\Reconhecimento-Facial-Pets\\images\\lil-1.jpg", IMREAD_GRAYSCALE);
+		Mat fcR;
 		cv::resize(smallImg(r), fcR, Size(30, 30));
 		int predicted_label = -1;
 		predicted_label = recognizer->predict(fcR);
@@ -177,7 +177,7 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 			cat = "Nao encontrado";
 			break;
 		}
-		cv::putText(img, "CAT DETECTED: " + cat, Point(faces[i].x, faces[i].y), FONT_HERSHEY_DUPLEX, .4, color);
+		cv::putText(img, "CAT DETECTED: " + cat, Point(faces[i].x, faces[i].y), FONT_HERSHEY_DUPLEX, 2, color);
 
 		if (!nestedObjects.empty()) 
 		{
