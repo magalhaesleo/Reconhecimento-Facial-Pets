@@ -1,68 +1,93 @@
 // ReconhecimentoFacialPets.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include "pch.h"
-// CPP program to detects face in a video 
+// CPP program to detects face in a video
 
-// Include required header files from OpenCV directory 
-#include "opencv2/objdetect.hpp"
-#include "opencv2/highgui.hpp" 
+// Include required header files from OpenCV directory
+#include "opencv2/opencv.hpp"
+#include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/face.hpp"
-#include <iostream> 
-#include <fstream>
-#include <filesystem>
+#include <iostream>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+#include <vector>
+#include <string>
+#include <cstring>
+#include <iostream>
+#include "Servo.h"
+
 
 using namespace std;
 using namespace cv;
+
 
 void detectAndDraw(Mat& img, CascadeClassifier& cascade, CascadeClassifier& nestedCascade, double scale);
 vector<int> labels;
 //Ptr<face::FaceRecognizer> recognizer = face::BasicFaceRecognizer::create(15, 4000);
 //Ptr<face::FaceRecognizer> recognizer = face::LBPHFaceRecognizer::create(15, 4000);
 //Ptr<face::FaceRecognizer> recognizer = face::FisherFaceRecognizer::create();
-Ptr<face::FaceRecognizer> recognizer = face::EigenFaceRecognizer::create();
+
+cv::Ptr<cv::face::FaceRecognizer> recognizer = cv::face::createEigenFaceRecognizer();
+Servo servo;
+
+int getdir (string dir, vector<string> &files)
+{
+    DIR *dp;
+    struct dirent *dirp;
+    if((dp  = opendir(dir.c_str())) == NULL) {
+        cout << "Error(" << errno << ") opening " << dir << endl;
+        return errno;
+    }
+
+    while ((dirp = readdir(dp)) != NULL) {
+		printf("file: %s\n", dirp->d_name);
+		 if (strcasestr(dirp->d_name, "jpg") != NULL)
+		 {
+			 files.push_back(string(dir).append("/").append(dirp->d_name));
+		 }
+    }
+    closedir(dp);
+    return 0;
+}
 
 static void read_images(vector<Mat>& images, vector<int>& labels)
 {
-	std::filesystem::directory_iterator di("D:\\Projetos\\Repositorios\\Reconhecimento-Facial-Pets\\images");
+	vector<string> files;
+	getdir("../../images", files);
 
-	for (filesystem::directory_entry file : di)
+	for (string file : files)
 	{
-		std::string fileStr = file.path().generic_string();
-		string ext = fileStr.substr(fileStr.length() - 3);
-				
-		if (ext == "jpg");
-		{
-			images.push_back(imread(fileStr, IMREAD_GRAYSCALE));
-			int label = fileStr.find("lil") != string::npos ? 1 : 2;
-			labels.push_back(label);
-		}
+		printf("filelist: %s\n", file.c_str());
+		images.push_back(imread(file, IMREAD_GRAYSCALE));
+        labels.push_back(1);
 	}
 }
+
 
 int main(int argc, const char** argv)
 {
 
-	// VideoCapture class for playing video for which faces to be detected 
+	// VideoCapture class for playing video for which faces to be detected
 	VideoCapture capture;
-	
+
 	Mat frame, image;
 
 
-	// PreDefined trained XML classifiers with facial features 
+	// PreDefined trained XML classifiers with facial features
 	CascadeClassifier cascade, nestedCascade;
 	double scale = 1;
 
-	// Load classifiers from "opencv/data/haarcascades" directory  
+	// Load classifiers from "opencv/data/haarcascades" directory
 	nestedCascade.load("../../haarcascades/haarcascade_eye_tree_eyeglasses.xml");
 
-	// Change path before execution  
+	// Change path before execution
 	//cascade.load("../../haarcascades/haarcascade_frontalcatface.xml");
 	cascade.load("../../haarcascades/haarcascade_frontalcatface_extended.xml");
 
 	vector<Mat> images;
-	
+
 	read_images(images, labels);
 
 	for (Mat &img : images)
@@ -79,7 +104,7 @@ int main(int argc, const char** argv)
 
 	if (capture.isOpened())
 	{
-		// Capture frames from video and detect faces 
+		// Capture frames from video and detect faces
 		cout << "Face Detection Started...." << endl;
 
 		while (1)
@@ -88,21 +113,24 @@ int main(int argc, const char** argv)
 			if (frame.empty())
 				break;
 			Mat frame1 = frame.clone();
+			transpose(frame1, frame1);
+			flip(frame1, frame1, 0);
 			detectAndDraw(frame1, cascade, nestedCascade, scale);
 			char c = (char)waitKey(2);
 
-			// Press q to exit from window 
+			// Press q to exit from window
 			if (c == 27 || c == 'q' || c == 'Q')
 			{
 				break;
 			}
-				
+
 		}
 	}
 	else
 		cout << "Could not Open Camera";
 	return 0;
 }
+
 
 void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 	CascadeClassifier& nestedCascade,
@@ -111,18 +139,18 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 	vector<Rect> faces;
 	Mat gray, smallImg;
 
-	cvtColor(img, gray, COLOR_BGR2GRAY); // Convert to Gray Scale 
+	cvtColor(img, gray, COLOR_BGR2GRAY); // Convert to Gray Scale
 	double fx = 1 / scale;
 
-	// Resize the Grayscale Image  
+	// Resize the Grayscale Image
 	resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);
 	equalizeHist(smallImg, smallImg);
 
-	// Detect faces of different sizes using cascade classifier  
+	// Detect faces of different sizes using cascade classifier
 	cascade.detectMultiScale(smallImg, faces, 1.1,
 		3, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
 
-	// Draw circles around the faces 
+	// Draw circles around the faces
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		Rect r = faces[i];
@@ -132,8 +160,8 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 
 		int radius;
 
-		Scalar color = 1 > 0 ? Scalar(32,247,24) : Scalar(0, 0, 255); // Color for Drawing tool 
-		
+		Scalar color = 1 > 0 ? Scalar(32,247,24) : Scalar(0, 0, 255); // Color for Drawing tool
+
 		double aspect_ratio = (double)r.width / r.height;
 		if (0.75 < aspect_ratio && aspect_ratio < 1.3)
 		{
@@ -150,7 +178,7 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 			continue;
 		smallImgROI = smallImg(r);
 
-		// Detection of eyes int the input image 
+		// Detection of eyes int the input image
 		nestedCascade.detectMultiScale(smallImgROI, nestedObjects, 1.1, 3,
 			0 | CASCADE_SCALE_IMAGE, Size(30, 30));
 
@@ -165,23 +193,23 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 
 		string cat;
 
+
 		switch (predicted_label)
 		{
 		case 1:
 			cat = "LIL";
-			break;
-		case 2:
-			cat = "GRUMPY";
+
+			servo.RotateDispenser();
 			break;
 		default:
-			cat = "Nao encontrado";
+			cat = "Pet nao encontrado";
 			break;
 		}
 		cv::putText(img, "CAT DETECTED: " + cat, Point(faces[i].x, faces[i].y), FONT_HERSHEY_DUPLEX, 2, color);
 
-		if (!nestedObjects.empty()) 
+		if (!nestedObjects.empty())
 		{
-			// Draw circles around eyes 
+			// Draw circles around eyes
 			for (size_t j = 0; j < nestedObjects.size(); j++)
 			{
 
@@ -194,6 +222,6 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 		}
 	}
 
-	// Show Processed Image with detected faces 
+	// Show Processed Image with detected faces
 	imshow("Face Detection", img);
 }
