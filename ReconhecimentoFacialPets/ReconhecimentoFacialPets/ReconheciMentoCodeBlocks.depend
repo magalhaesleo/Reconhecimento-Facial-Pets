@@ -1,0 +1,25 @@
+# depslib dependency file v1.0
+1568588524 source:/home/pi/Desktop/repositories/Reconhecimento-Facial-Pets/ReconhecimentoFacialPets/ReconhecimentoFacialPets/ReconhecimentoFacialPets.cpp
+	"opencv2/opencv.hpp"
+	"opencv2/highgui.hpp"
+	"opencv2/imgproc.hpp"
+	"opencv2/face.hpp"
+	<iostream>
+	<sys/types.h>
+	<dirent.h>
+	<errno.h>
+	<vector>
+	<string>
+	<cstring>
+	<iostream>
+	"Servo.h"
+
+1568589644 source:/home/pi/Desktop/repositories/Reconhecimento-Facial-Pets/ReconhecimentoFacialPets/ReconhecimentoFacialPets/src/Servo.cpp
+	"Servo.h"
+	<stdio.h>
+	<wiringPi.h>
+	<softPwm.h>
+	<chrono>
+
+1568586050 /home/pi/Desktop/repositories/Reconhecimento-Facial-Pets/ReconhecimentoFacialPets/ReconhecimentoFacialPets/include/Servo.h
+
