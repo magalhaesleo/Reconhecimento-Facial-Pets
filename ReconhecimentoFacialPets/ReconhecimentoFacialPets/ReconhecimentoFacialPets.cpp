@@ -29,7 +29,7 @@ vector<int> labels;
 //Ptr<face::FaceRecognizer> recognizer = face::LBPHFaceRecognizer::create(15, 4000);
 //Ptr<face::FaceRecognizer> recognizer = face::FisherFaceRecognizer::create();
 
-cv::Ptr<cv::face::FaceRecognizer> recognizer = cv::face::createEigenFaceRecognizer();
+cv::Ptr<cv::face::FaceRecognizer> recognizer = cv::face::createFisherFaceRecognizer();
 Servo servo;
 
 int getdir (string dir, vector<string> &files)
@@ -61,7 +61,9 @@ static void read_images(vector<Mat>& images, vector<int>& labels)
 	{
 		printf("filelist: %s\n", file.c_str());
 		images.push_back(imread(file, IMREAD_GRAYSCALE));
-        labels.push_back(1);
+		int label = file.find("2019") != string::npos ? 2 : 1;
+        labels.push_back(label);
+        printf("label: %i\n", label);
 	}
 }
 
@@ -116,7 +118,7 @@ int main(int argc, const char** argv)
 			transpose(frame1, frame1);
 			flip(frame1, frame1, 0);
 			detectAndDraw(frame1, cascade, nestedCascade, scale);
-			char c = (char)waitKey(2);
+			char c = (char)waitKey(1);
 
 			// Press q to exit from window
 			if (c == 27 || c == 'q' || c == 'Q')
@@ -160,7 +162,30 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 
 		int radius;
 
-		Scalar color = 1 > 0 ? Scalar(32,247,24) : Scalar(0, 0, 255); // Color for Drawing tool
+        Mat fcR;
+		cv::resize(smallImg(r), fcR, Size(30, 30));
+		int predicted_label = -1;
+		predicted_label = recognizer->predict(fcR);
+
+		printf("predict: %i\n", predicted_label);
+
+		string cat;
+		Scalar color; // Color for Drawing tool
+		switch (predicted_label)
+		{
+		case 1:
+			cat = "REGISTRADO";
+			color = Scalar(32,247,24);
+			servo.RotateDispenser();
+			break;
+		default:
+			cat = "NAO REGISTRADO";
+			color = Scalar(0, 0, 255);
+			break;
+
+        }
+
+
 
 		double aspect_ratio = (double)r.width / r.height;
 		if (0.75 < aspect_ratio && aspect_ratio < 1.3)
@@ -182,30 +207,8 @@ void detectAndDraw(Mat& img, CascadeClassifier& cascade,
 		nestedCascade.detectMultiScale(smallImgROI, nestedObjects, 1.1, 3,
 			0 | CASCADE_SCALE_IMAGE, Size(30, 30));
 
-		//cv::Ptr<cv::face::StandardCollector> collector = face::StandardCollector::create();
-		//Mat fcR = imread("D:\\Projetos\\Repositorios\\Reconhecimento-Facial-Pets\\images\\lil-1.jpg", IMREAD_GRAYSCALE);
-		Mat fcR;
-		cv::resize(smallImg(r), fcR, Size(30, 30));
-		int predicted_label = -1;
-		predicted_label = recognizer->predict(fcR);
 
-		printf("predict: %i\n", predicted_label);
-
-		string cat;
-
-
-		switch (predicted_label)
-		{
-		case 1:
-			cat = "LIL";
-
-			servo.RotateDispenser();
-			break;
-		default:
-			cat = "Pet nao encontrado";
-			break;
-		}
-		cv::putText(img, "CAT DETECTED: " + cat, Point(faces[i].x, faces[i].y), FONT_HERSHEY_DUPLEX, 2, color);
+        cv::putText(img, cat, Point(faces[i].x, faces[i].y), FONT_HERSHEY_DUPLEX, 2, color);
 
 		if (!nestedObjects.empty())
 		{

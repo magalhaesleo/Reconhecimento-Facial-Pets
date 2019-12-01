@@ -25,10 +25,10 @@ void Servo::RotateDispenser()
     if (initialized)
     {
         auto now = chrono::_V2::system_clock::now();
-        auto c = chrono::duration_cast<chrono::seconds>(now - lastRotation).count();
+        auto c = chrono::duration_cast<chrono::hours>(now - lastRotation).count();
 
         printf("seconds elapsed: %lli\n", c);
-        if (c < 60)
+        if (c < 4)
         {
             return;
         }
@@ -57,7 +57,7 @@ void Servo::RotateDispenser()
         softPwmWrite(PIN, 6);
         delay(600);
         softPwmWrite(PIN, 15);
-        delay(500);
+        delay(400);
         printf("17\n");
         softPwmWrite(PIN, 24);
         delay(440);
